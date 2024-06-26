@@ -74,9 +74,13 @@ def anonymize(df, partitions, feature_columns, sensitive_column, max_partitions=
             break
         grouped_columns = df.loc[partition].agg(aggregations, squeeze=False)
         sensitive_counts = (
-            df.loc[partition].groupby(sensitive_column).agg({sensitive_column: "count"})
+            df.loc[partition].groupby(sensitive_column, observed=False).agg({sensitive_column: "count"})
         )
-        values = grouped_columns.apply(lambda x: x[0]).to_dict()
+
+        values= {}
+        for name,val in grouped_columns.items():
+            values[name] = val[0]
+        
         for sensitive_value, count in sensitive_counts[sensitive_column].items():
             if count == 0:
                 continue
@@ -105,6 +109,10 @@ def count_anonymity(
         if max_partitions is not None and i > max_partitions:
             break
         grouped_columns = df.loc[partition].agg(aggregations, squeeze=False)
-        values = grouped_columns.apply(lambda x: x[0]).to_dict()
+        
+        values= {}
+        for name,val in grouped_columns.items():
+            values[name] = val[0]
+
         rows.append(values.copy())
     return rows
